@@ -229,6 +229,13 @@ class HttpdTestEnv:
     def get_ssl_module(cls):
         return os.environ['SSL'] if 'SSL' in os.environ else 'mod_ssl'
 
+    @classmethod
+    def has_shared_module(cls, name):
+        if cls.LIBEXEC_DIR is None:
+            env = HttpdTestEnv()  # will initialized it
+        path = os.path.join(cls.LIBEXEC_DIR, f"mod_{name}.so")
+        return os.path.isfile(path)
+
     def __init__(self, pytestconfig=None):
         self._our_dir = os.path.dirname(inspect.getfile(Dummy))
         self.config = ConfigParser(interpolation=ExtendedInterpolation())
@@ -256,7 +263,6 @@ class HttpdTestEnv:
         self._proxy_port = int(self.config.get('test', 'proxy_port'))
         self._ws_port = int(self.config.get('test', 'ws_port'))
         self._http_tld = self.config.get('test', 'http_tld')
-        self._src_dir = self.config.get('test', 'src_dir')
         self._test_dir = self.config.get('test', 'test_dir')
         self._clients_dir = os.path.join(os.path.dirname(self._test_dir), 'clients')
         self._gen_dir = self.config.get('test', 'gen_dir')
@@ -402,10 +408,6 @@ class HttpdTestEnv:
     @property
     def gen_dir(self) -> str:
         return self._gen_dir
-
-    @property
-    def src_dir(self) -> str:
-        return self._src_dir
 
     @property
     def test_dir(self) -> str:
@@ -577,11 +579,10 @@ class HttpdTestEnv:
                 p.stdout.replace(HttpdTestSetup.CURL_STDOUT_SEPARATOR.encode(), b'')
             except:
                 pass
-        r = ExecResult(args=args, exit_code=p.returncode,
-                       stdout=p.stdout, stderr=p.stderr,
-                       stdout_as_list=stdout_as_list,
-                       duration=datetime.now() - start)
-        return r
+        return ExecResult(args=args, exit_code=p.returncode,
+                          stdout=p.stdout, stderr=p.stderr,
+                          stdout_as_list=stdout_as_list,
+                          duration=datetime.now() - start)
 
     def mkurl(self, scheme, hostname, path='/'):
         port = self.https_port if scheme == 'https' else self.http_port
@@ -595,11 +596,11 @@ class HttpdTestEnv:
             fd.write(f"CoreDumpDirectory {self._server_dir}\n")
             fd.write('\n')
             if self._verbosity >= 3:
-                fd.write(f"LogLevel trace7\n")
+                fd.write(f"LogLevel trace7 ssl:trace6\n")
                 fd.write(f"DumpIoOutput on\n")
                 fd.write(f"DumpIoInput on\n")
             elif self._verbosity >= 2:
-                fd.write(f"LogLevel debug core:trace5 {self.mpm_module}:trace5 http:trace5\n")
+                fd.write(f"LogLevel debug core:trace5 {self.mpm_module}:trace5 ssl:trace5 http:trace5\n")
             elif self._verbosity >= 1:
                 fd.write(f"LogLevel info\n")
             else:

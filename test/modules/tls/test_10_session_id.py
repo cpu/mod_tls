@@ -35,7 +35,8 @@ class TestSessionID:
         )
         assert 1 == len(set(session_ids)), "sesion-ids should all be the same: {0}".format(session_ids)
 
-    @pytest.mark.skip("client side TLSv1.3 support shaky on some platforms")
+    @pytest.mark.skipif(True or not TlsTestEnv.openssl_supports_tls_1_3(),
+                        reason="openssl TLSv1.3 session storage test incomplete")
     def test_tls_10_session_id_13(self, env):
         r = env.openssl_client(env.domain_b, extra_args=[
             "-reconnect", "-tls1_3"

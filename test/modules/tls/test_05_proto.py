@@ -34,14 +34,31 @@ class TestProto:
         r = env.tls_get(env.domain_b, "/index.json", options=["--tlsv1.2"])
         assert r.exit_code == 0, r.stderr
 
+    @pytest.mark.skip('curl does not have TLSv1.3 on all platforms')
     def test_tls_05_proto_1_3(self, env):
         r = env.tls_get(env.domain_a, "/index.json", options=["--tlsv1.3", '-v'])
-        if r.exit_code == 4:
-            # curl's build does not support TLSv1.3
-            pytest.skip(f'curl does not support TLSv1.3')
-        assert r.exit_code == 0, f'{r}'
+        if True: # testing TlsTestEnv.curl_supports_tls_1_3() is unreliable (curl should support TLS1.3 nowadays..)
+            assert r.exit_code == 0, f'{r}'
+        else:
+            assert r.exit_code == 4, f'{r}'
 
     def test_tls_05_proto_close(self, env):
         s = socket.create_connection(('localhost', env.https_port))
         time.sleep(0.1)
         s.close()
+
+    def test_tls_05_proto_ssl_close(self, env):
+        conf = TlsTestConf(env=env, extras={
+            'base': "LogLevel ssl:debug",
+            env.domain_a: "SSLProtocol TLSv1.3",
+            env.domain_b: "SSLProtocol TLSv1.2",
+        })
+        for d in [env.domain_a, env.domain_b]:
+            conf.add_vhost(domains=[d], port=env.https_port)
+        conf.install()
+        assert env.apache_restart() == 0
+        s = socket.create_connection(('localhost', env.https_port))
+        time.sleep(0.1)
+        s.close()
+
+

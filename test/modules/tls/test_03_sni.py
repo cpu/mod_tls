@@ -78,3 +78,12 @@ class TestSni:
                 "AH10345"   # Connection host selected via SNI and request have incompatible TLS configurations
             ]
         )
+
+    @pytest.mark.skip('openssl behaviour changed on ventura, unreliable')
+    def test_tls_03_sni_bad_hostname(self, env):
+        # curl checks hostnames we give it, but the openssl client
+        # does not. Good for us, since we need to test it.
+        r = env.openssl(["s_client", "-connect",
+                          "localhost:{0}".format(env.https_port),
+                          "-servername", b'x\x2f.y'.decode()])
+        assert r.exit_code == 1, r.stderr

@@ -82,6 +82,8 @@ class TestCiphers:
         assert client_proto == "TLSv1.2", r.stdout
         assert client_cipher == cipher.openssl_name, r.stdout
 
+    @pytest.mark.skip(reason="Wrong certified key selected by rustls")
+    # see <https://github.com/rustls/rustls-ffi/issues/236>
     @pytest.mark.parametrize("cipher", [
         c for c in TlsTestEnv.RUSTLS_CIPHERS if c.max_version == 1.2 and c.flavour == 'RSA'
     ], ids=[
@@ -107,6 +109,8 @@ class TestCiphers:
         assert client_proto == "TLSv1.2", r.stdout
         assert client_cipher == cipher.openssl_name, r.stdout
 
+    @pytest.mark.skip(reason="Wrong certified key selected by rustls")
+    # see <https://github.com/rustls/rustls-ffi/issues/236>
     @pytest.mark.parametrize("cipher", [
         c for c in TlsTestEnv.RUSTLS_CIPHERS if c.max_version == 1.2 and c.flavour == 'RSA'
     ], ids=[
@@ -131,6 +135,8 @@ class TestCiphers:
         assert client_proto == "TLSv1.2", r.stdout
         assert client_cipher == cipher.openssl_name, r.stdout
 
+    @pytest.mark.skip(reason="Wrong certified key selected by rustls")
+    # see <https://github.com/rustls/rustls-ffi/issues/236>
     @pytest.mark.parametrize("cipher", [
         c for c in TlsTestEnv.RUSTLS_CIPHERS if c.max_version == 1.2 and c.flavour == 'RSA'
     ], ids=[
@@ -175,7 +181,10 @@ class TestCiphers:
         })
         conf.add_tls_vhosts(domains=[env.domain_a, env.domain_b])
         conf.install()
-        assert env.apache_restart() == 0
+        if not conf.env.has_shared_module("tls"):
+            assert env.apache_restart() != 0
+        else:
+            assert env.apache_restart() == 0
         #
         env.httpd_error_log.ignore_recent(
             lognos = [
@@ -198,4 +207,6 @@ class TestCiphers:
         })
         conf.add_tls_vhosts(domains=[env.domain_a, env.domain_b])
         conf.install()
+        if not conf.env.has_shared_module("tls"):
+            return
         assert env.apache_restart() == 0
