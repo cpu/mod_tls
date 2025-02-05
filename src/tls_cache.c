@@ -228,11 +228,16 @@ static rustls_result tls_cache_get(
     tls_conf_conn_t *cc = tls_conf_conn_get(c);
     tls_conf_server_t *sc = tls_conf_server_get(cc->server);
     apr_status_t rv = APR_ENOENT;
-    unsigned int vlen, klen;
+    unsigned int vlen;
+    unsigned int klen;
     const unsigned char *kdata;
 
     if (!sc->global->session_cache) goto not_found;
     tls_cache_lock(sc->global);
+
+    if (key->len > UINT_MAX || key->len > SSIZE_MAX) {
+       return RUSTLS_RESULT_INVALID_PARAMETER;
+    }
 
     kdata = key->data;
     klen = (unsigned int)key->len;
@@ -241,7 +246,7 @@ static rustls_result tls_cache_get(
         sc->global->session_cache, cc->server, kdata, klen, buf, &vlen, c->pool);
 
     if (APLOGctrace4(c)) {
-        apr_ssize_t n = klen;
+        apr_ssize_t n = (apr_ssize_t) klen;
         ap_log_cerror(APLOG_MARK, APLOG_TRACE4, rv, c, "retrieve key %d[%8x], found %d val",
             klen, apr_hashfunc_default((const char*)kdata, &n), vlen);
     }
