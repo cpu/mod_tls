@@ -214,10 +214,16 @@ class HttpdTestSetup:
         clients_dir = os.path.join(
             os.path.dirname(os.path.dirname(inspect.getfile(HttpdTestSetup))),
             'clients')
+        # Log what's in the directory
+        log.error(f"Client dir contents: {os.listdir(clients_dir)}")
+        p = subprocess.run(['make', '--version'], capture_output=True, cwd=clients_dir)
+        log.error(f"Make version: {p.stdout}")
         p = subprocess.run(['make'], capture_output=True, cwd=clients_dir)
         rv = p.returncode
         if rv != 0:
-            log.error(f"compiling test clients failed: {p.stderr}")
+            log.error(f"compiling test clients failed in {clients_dir}")
+            log.error(f"make stdout: {p.stdout}")
+            log.error(f"make stderr: {p.stderr}")
             raise Exception(f"compiling test clients failed: {p.stderr}")
 
 
@@ -957,4 +963,3 @@ class HttpdTestEnv:
                 s = f"{i:09d}-{s}\n"
                 fd.write(s[0:remain])
         return fpath
-

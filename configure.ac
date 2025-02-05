@@ -284,7 +284,6 @@ AC_CONFIG_FILES([
     src/tls_version.h
     src/Makefile
     test/Makefile
-    test/clients/Makefile
     test/pyhttpd/config.ini
 ])
 
