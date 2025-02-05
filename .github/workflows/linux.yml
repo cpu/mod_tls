@@ -121,6 +121,9 @@ jobs:
       - name: 'build'
         run: make V=1
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+
       - name: pytest
         env:
           PYTEST_ADDOPTS: "--color=yes"
